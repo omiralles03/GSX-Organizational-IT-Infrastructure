@@ -1,0 +1,17 @@
+{
+  "name": "gsx-app",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "omiralles03",
+  "type": "module",
+  "main": "server.mjs",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.mjs"
+  },
+  "keywords": [],
+  "dependencies": {
+    "dotenv": "^17.4.2"
+  }
+}
