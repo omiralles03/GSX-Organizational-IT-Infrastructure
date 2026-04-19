@@ -1,0 +1,82 @@
+services:
+  # SERVICIO 1: Base de Datos (Redis) - Nivel Advanced
+  db:
+    image: redis:alpine           # Usamos Alpine para seguir vuestra línea de optimización
+    container_name: gsx-db
+    ports:
+      - "${REDIS_PORT}:6379"
+    networks:
+      - gsx_network
+    volumes:                      # Persistencia de datos (Core)
+      - redis_data:/data
+    restart: always               # Política de reinicio (Intermediate)
+    deploy:                       # Límites de recursos (Advanced)
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 64M
+    logging:                      # Driver de logs JSON (Advanced)
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # SERVICIO 2: Backend (Node.js)
+  backend:
+    build: 
+      context: ./app
+    container_name: gsx-backend
+    ports:
+      - "${BACKEND_PORT}:3000"
+    networks:
+      - gsx_network
+    depends_on:                   # Orden de arranque (Intermediate)
+      db:
+        condition: service_started
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # SERVICIO 3: Servidor Web (Nginx)
+  web:
+    build: 
+      context: ./nginx
+    container_name: gsx-web
+    ports:
+      - "${WEB_PORT}:8080"
+    networks:
+      - gsx_network
+    volumes:
+      - nginx_logs:/var/log/nginx # Persistencia de logs
+    depends_on:                   # Solo arranca si el backend está sano (Intermediate)
+      backend:
+        condition: service_healthy
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 128M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# Definición de redes personalizadas (Advanced)
+networks:
+  gsx_network:
+    driver: bridge
+
+# Definición de volúmenes para persistencia (Core)
+volumes:
+  redis_data:
+  nginx_logs:
