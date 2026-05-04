@@ -1,0 +1,32 @@
+# https://kubernetes.io/docs/concepts/services-networking/service/
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gsx-app-deployment
+  labels:
+    app: gsx-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: gsx-app
+  template:
+    metadata:
+      labels:
+        app: gsx-app
+    spec:
+      containers:
+        - name: gsx-app-container
+          image: omiralles03/gsx-app:v1
+          ports:
+            - containerPort: 3000
+          envFrom:
+            - configMapRef:
+                name: app-config
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "100m"
+            limits:
+              memory: "128Mi"
+              cpu: "200m"

@@ -1,0 +1,19 @@
+# https://kubernetes.io/docs/concepts/configuration/configmap/
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+data:
+  # Listen to port 8080
+  # on GET /api/ send request to gsx-backend-service
+  default.conf: |
+    server {
+      listen 8080;
+      location / {
+        root /usr/share/nginx/html;
+        index index.html;
+      }
+      location /api/ {
+        proxy_pass http://gsx-backend-service:3000/;
+      }
+    }
