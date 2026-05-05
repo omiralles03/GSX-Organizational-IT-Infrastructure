@@ -1,0 +1,83 @@
+
+name: CI/CD Pipeline para GSX Week 11
+
+on:
+  push:
+    branches: [ "main" ] # Se activa al subir código a la rama principal
+
+jobs:
+  # Construir y Subir Imágenes a Docker Hub
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+        # Nos conectamos a Docker Hub dinámicamente según quién haya hecho el push
+      - name: Iniciar sesión en Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ github.actor == 'Rafita-pino' && secrets.DOCKERHUB_USERNAME_RAFA || secrets.DOCKERHUB_USERNAME_OUPMAN }}
+          password: ${{ github.actor == 'Rafita-pino' && secrets.DOCKERHUB_TOKEN_RAFA || secrets.DOCKERHUB_TOKEN_OUPMAN }}
+
+      # Extraemos los datos del commit (el hash) para usarlo como versión de la imagen
+      - name: Configurar metadatos para Docker (Node.js App)
+        id: meta-app
+        uses: docker/metadata-action@v5
+        with:
+          # Elegimos el usuario de la imagen dinámicamente
+          images: ${{ github.actor == 'Rafita-pino' && secrets.DOCKERHUB_USERNAME_RAFA || secrets.DOCKERHUB_USERNAME_OUPMAN }}/gsx-app
+          tags: |
+            type=sha,format=short
+
+      # Construimos y subimos la imagen del Backend (Node.js)
+      - name: Build y Push de gsx-app
+        uses: docker/build-push-action@v5
+        with:
+          context: ./app
+          push: true
+          tags: ${{ steps.meta-app.outputs.tags }}
+
+      # Hacemos lo mismo para el Nginx
+      - name: Configurar metadatos para Docker (Nginx)
+        id: meta-nginx
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ github.actor == 'Rafita-pino' && secrets.DOCKERHUB_USERNAME_RAFA || secrets.DOCKERHUB_USERNAME_OUPMAN }}/nginx-gsx
+          tags: |
+            type=sha,format=short
+
+      # Construimos y subimos la imagen de Nginx
+      - name: Build y Push de nginx-gsx
+        uses: docker/build-push-action@v5
+        with:
+          context: ./nginx
+          push: true
+          tags: ${{ steps.meta-nginx.outputs.tags }}
+
+  # Validar la Infraestructura (Terraform)
+  terraform-validate:
+    runs-on: ubuntu-latest
+    # Le decimos a GitHub que la carpeta de trabajo es /terraform
+    defaults:
+      run:
+        working-directory: ./terraform
+        
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Instalar Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      # Inicializamos Terraform PERO sin conectarnos a nada real (-backend=false)
+      - name: Terraform Init
+        run: terraform init -backend=false
+
+      # Comprobamos que el código está bien tabulado
+      - name: Terraform Format
+        run: terraform fmt -check
+
+      # Comprobamos que la sintaxis es correcta
+      - name: Terraform Validate
+        run: terraform validate
