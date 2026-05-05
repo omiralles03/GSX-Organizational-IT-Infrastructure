@@ -11,3 +11,7 @@ yarn-error.log*
 *.tar
 .env
 *.tfvars
+
+**/.terraform/*
+*.tfstate
+*.tfstate.*

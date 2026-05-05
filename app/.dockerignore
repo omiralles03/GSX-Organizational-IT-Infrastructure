@@ -4,3 +4,8 @@ npm-debug.log
 .gitignore
 .env
 *.tfvars
+.terraform
+
+**/.terraform/*
+*.tfstate
+*.tfstate.*
