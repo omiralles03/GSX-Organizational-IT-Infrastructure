@@ -1,4 +1,0 @@
-docker_username  = "dockerhub-user"
-app_image_tag    = "v1"
-nginx_image_tag  = "v1"
-replicas_backend = 3

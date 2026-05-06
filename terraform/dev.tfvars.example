@@ -1,0 +1,6 @@
+# terraform apply -var-file="dev.tfvars"
+
+docker_username  = "dockerhub-user"
+app_image_tag    = "latest"    #latest version to testing
+nginx_image_tag  = "latest"
+replicas_backend = 1  

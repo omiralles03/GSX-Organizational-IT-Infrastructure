@@ -1,0 +1,6 @@
+# terraform apply -var-file="staging.tfvars"
+
+docker_username  = "dockerhub-user"
+app_image_tag    = "v1"         #tested version
+nginx_image_tag  = "v1"
+replicas_backend = 3
