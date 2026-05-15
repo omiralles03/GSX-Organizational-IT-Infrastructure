@@ -251,7 +251,7 @@ resource "kubernetes_deployment" "grafana" {
         container {
           name  = "grafana"
           image = "grafana/grafana:latest"
-          
+
           env {
             name  = "GF_SECURITY_ADMIN_USER"
             value = var.grafana_admin_user
@@ -260,40 +260,40 @@ resource "kubernetes_deployment" "grafana" {
             name  = "GF_SECURITY_ADMIN_PASSWORD"
             value = var.grafana_admin_password
           }
-          
+
           # Montaje 1: Datasource
           volume_mount {
             name       = "ds-volume"
             mount_path = "/etc/grafana/provisioning/datasources"
           }
-          
+
           # Montaje 2: Provider
           volume_mount {
             name       = "prov-volume"
             mount_path = "/etc/grafana/provisioning/dashboards"
           }
-          
+
           # Montaje 3: El JSON del Dashboard real
           volume_mount {
             name       = "json-volume"
             mount_path = "/var/lib/grafana/dashboards/gsx"
           }
         }
-        
+
         volume {
           name = "ds-volume"
           config_map {
             name = kubernetes_config_map.grafana_datasource.metadata[0].name
           }
         }
-        
+
         volume {
           name = "prov-volume"
           config_map {
             name = kubernetes_config_map.grafana_provider.metadata[0].name
           }
         }
-        
+
         volume {
           name = "json-volume"
           config_map {
