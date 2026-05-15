@@ -109,7 +109,7 @@ Per traslladar el disseny de xarxa al clúster, hem implementat polítiques de s
         - from:
             - podSelector: {}
               # all access
-        - from:
+        - from: # Allow
             - ipBlock:
                 cidr: 10.0.10.0/24 # Partners
             - ipBlock:
@@ -155,6 +155,128 @@ command terminated with exit code 1
 ❯ kubectl exec -n development -it gsx-app-deployment-f485b9cf8-9jqw2 -- nc -w 2 -zv 8.8.8.8 53
 8.8.8.8 (8.8.8.8:53) open
 ```
-3. Stagint:
-4. Production:
+
+3. Staging:
+   
+Només permet l'accés als Developers, però només poden accedir per el frontal DMZ (Nginx)
+```yml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-devs-only
+  namespace: staging
+spec:
+  podSelector:
+    matchLabels:
+      app: nginx-gsx # Entry only from DMZ
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - ipBlock:
+            cidr: 10.0.100.0/24 # Only Devs
+      ports:
+        - protocol: TCP
+          port: 8080
+
+```
+
+Proves:
+
+```bash
+# Deployment
+❯ kubectl apply -f . -n staging
+configmap/app-config unchanged
+deployment.apps/gsx-app-deployment created
+service/gsx-backend-service created
+networkpolicy.networking.k8s.io/allow-devs-only unchanged
+networkpolicy.networking.k8s.io/allow-nginx-to-node unchanged
+networkpolicy.networking.k8s.io/allow-node-to-redis unchanged
+networkpolicy.networking.k8s.io/block-stage-to-prod unchanged
+networkpolicy.networking.k8s.io/default-deny-all unchanged
+configmap/nginx-config unchanged
+deployment.apps/nginx-deployment created
+service/gsx-nginx-service created
+deployment.apps/redis-deployment created
+service/redis-service created
+
+
+# Test going from Node -> Redis
+❯ kubectl exec -n staging -it gsx-app-deployment-f485b9cf8-c8rlg -- nc -zv redis-service 6379
+redis-service (10.106.19.81:6379) open
+
+# Test going from Nginx -> Redis
+❯ kubectl exec -n staging -it nginx-deployment-bd697789b-2cgq5 -- nc -w 2 -zv redis-service 6379
+redis-service (10.106.19.81:6379) open
+
+# Test going from Staging -> Production
+❯ kubectl exec -n staging -it gsx-app-deployment-f485b9cf8-c8rlg -- nc -w 2 -zv 10.0.3.50 6379
+nc: 10.0.3.50 (10.0.3.50:6379): Operation timed out
+command terminated with exit code 1
+
+# Test outside connection (to Google)
+❯ kubectl exec -n staging -it gsx-app-deployment-f485b9cf8-c8rlg -- nc -w 2 -zv 8.8.8.8 53
+8.8.8.8 (8.8.8.8:53) open
+```
+
+Ens trobem que tot i la lògica és correcte en les regles dels yml, en staging minikube no te un CNI que apliqui be les NetworkPolicies, permetent que es pugui fer Nginx -> Redis.
+
+5. Production:
+Aquí es permet l'accés a tothom al DMZ, pero només els devs poden accedir a Node en casos excepcionals. Per seguretat ningú pot accedir a Redis.
+
+```yml
+spec:
+  podSelector:
+    matchLabels:
+      app: gsx-app # Allow devs to Node
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - ipBlock:
+            cidr: 10.0.100.0/24
+      ports:
+        - protocol: TCP
+          port: 3000
+```
+Proves:
+
+```bash
+# Deployment
+❯ kubectl apply -f . -n production
+configmap/app-config unchanged
+deployment.apps/gsx-app-deployment created
+service/gsx-backend-service created
+networkpolicy.networking.k8s.io/allow-staff-to-internal created
+networkpolicy.networking.k8s.io/allow-nginx-to-node unchanged
+networkpolicy.networking.k8s.io/allow-node-to-redis unchanged
+networkpolicy.networking.k8s.io/allow-public-to-nginx created
+networkpolicy.networking.k8s.io/block-prod-to-others created
+networkpolicy.networking.k8s.io/default-deny-all unchanged
+configmap/nginx-config unchanged
+deployment.apps/nginx-deployment created
+service/gsx-nginx-service created
+deployment.apps/redis-deployment created
+service/redis-service created
+
+# Test going from DMZ -> Node
+❯ kubectl exec -n production -it nginx-deployment-bd697789b-vpn5r -- nc -zv gsx-backend-service 3000
+gsx-backend-service (10.109.54.100:3000) open
+
+# Test going from Nginx -> Redis
+❯ kubectl exec -n production -it nginx-deployment-bd697789b-vpn5r -- nc -w 2 -zv redis-service 6379
+redis-service (10.105.102.60:6379) open
+
+# Test connecting from subnet Dev
+❯ kubectl exec -n production -it nginx-deployment-bd697789b-vpn5r -- nc -w 2 -zv 10.0.1.50 80
+nc: 10.0.1.50 (10.0.1.50:80): Operation timed out
+command terminated with exit code 1
+
+# Test Nginx Port exposed
+❯ kubectl get svc -n production gsx-nginx-service
+NAME                TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE
+gsx-nginx-service   NodePort   10.100.23.174   <none>        80:30082/TCP   16m
+
+```
+Ens trobem de nou que tot i la lògica és correcte en les regles dels yml, en staging minikube no te un CNI que apliqui be les NetworkPolicies, permetent que es pugui fer Nginx -> Redis.
    
