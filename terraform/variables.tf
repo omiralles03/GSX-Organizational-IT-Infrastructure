@@ -31,3 +31,19 @@ variable "grafana_admin_password" {
   type        = string
   sensitive   = true
 }
+
+variable "alert_email_receiver" {
+  description = "Lista de correos que recibirán las alertas"
+  type        = list(string)
+}
+
+variable "alert_email_sender" {
+  description = "Correo que enviará las alertas"
+  type        = string
+}
+
+variable "alert_email_password" {
+  description = "Contraseña de aplicación SMTP"
+  type        = string
+  sensitive   = true
+}

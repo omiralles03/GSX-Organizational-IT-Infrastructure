@@ -61,7 +61,7 @@ resource "kubernetes_deployment" "app_deployment" {
             }
             limits = {
               memory = "128Mi"
-              cpu    = "200m"
+              cpu    = "1500m" #1,5 nucleos
             }
           }
         }
