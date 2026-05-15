@@ -19,3 +19,15 @@ variable "replicas_backend" {
   type        = number
   default     = 3
 }
+
+variable "grafana_admin_user" {
+  description = "Usuario admin para Grafana"
+  type        = string
+  default     = "admin"
+}
+
+variable "grafana_admin_password" {
+  description = "Contraseña admin para Grafana"
+  type        = string
+  sensitive   = true
+}
