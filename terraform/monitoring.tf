@@ -60,7 +60,7 @@ resource "kubernetes_config_map" "prometheus_config" {
               target_label: __metrics_path__
               replacement: /api/v1/nodes/$1/proxy/metrics/cadvisor
     EOT
-    
+
     # REGLAS DE ALERTAS (Nivel Intermediate)
     "alerts.yml" = <<-EOT
       groups:
