@@ -1,19 +1,17 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-nginx-to-node
-  namespace: production
+  name: allow-node-to-redis
+  namespace: staging
 spec:
   podSelector:
     matchLabels:
-      app: gsx-app
-  policyTypes:
-    - Ingress
+      app: redis
   ingress:
     - from:
         - podSelector:
             matchLabels:
-              app: nginx-gsx
+              app: gsx-app # Only possible access
       ports:
         - protocol: TCP
-          port: 3000
+          port: 6379

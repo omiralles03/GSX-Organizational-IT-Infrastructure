@@ -3,7 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: gsx-app-deployment
-  namespace: production
+  namespace: development
   labels:
     app: gsx-app
 spec:

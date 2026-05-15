@@ -1,19 +1,18 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-nginx-to-node
-  namespace: production
+  name: allow-devs-only
+  namespace: staging
 spec:
   podSelector:
     matchLabels:
-      app: gsx-app
+      app: nginx-gsx # Entry only from DMZ
   policyTypes:
     - Ingress
   ingress:
     - from:
-        - podSelector:
-            matchLabels:
-              app: nginx-gsx
+        - ipBlock:
+            cidr: 10.0.100.0/24 # Only Devs
       ports:
         - protocol: TCP
-          port: 3000
+          port: 8080

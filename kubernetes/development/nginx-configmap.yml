@@ -3,7 +3,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: nginx-config
-  namespace: production
+  namespace: development
 data:
   # Listen to port 8080
   # on GET /api/ send request to gsx-backend-service

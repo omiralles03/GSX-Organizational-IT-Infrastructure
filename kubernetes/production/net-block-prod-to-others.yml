@@ -1,0 +1,16 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: block-prod-to-others
+  namespace: production
+spec:
+  podSelector: {} # All pods
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0 # Allow to exit anywhere
+            except:
+              - 10.0.1.0/24 # Block Development
+              - 10.0.2.0/24 # Block Staging
