@@ -279,4 +279,55 @@ gsx-nginx-service   NodePort   10.100.23.174   <none>        80:30082/TCP   16m
 
 ```
 Ens trobem de nou que tot i la lògica és correcte en les regles dels yml, en staging minikube no te un CNI que apliqui be les NetworkPolicies, permetent que es pugui fer Nginx -> Redis.
+
+## 4. Documentació dels Security Boundaries
+
+- What traffic is allowed between networks?
+  El tràfic segueix el model **Minimum Privelege** on tenim:
+  a. Public -> DMZ: accés HTTP desde iternet a Nging.
+  b. DNZ -> Internal: des del proxy Nginx fins a l'aplicació Node.
+  c. Internal -> Database: consultes que fa l'aplicació a la BD de Redis.
+  d. Devs -> All: accés administratiu a la subxarxa de gestió `10.0.100.0/24` a tots els segments.
+     
+- What traffic is blocked? Why?
+  a. Public -> Database: per evitar comprometre dades als atacants.
+  b. Production -> Development/Staging: evitar el moviment lateral entre entorns perquè no s'extenguin vulnerabilitats.
+  c. Partners -> Production: els partners només poden accedir a l'entorn de Development.
+     
+- How do you prevent accidental misconfiguration?
+  Aplicant el concepte **Default Deny** amb les NetworkPolicies. On cada servei desplegat, si no té una politica específica per defecte es manté aïllat. A més utilitzem Namespaces i rutes amb IPBlocks.
+
+## Research: Core Services
+
+1. **DNS (Domain Name System)**:
+- Research: what is DNS? What problem does it solve?
+  
+  Serveix per tenir les adreces IP en format text llegible per les persones en lloc de numeros.
+
+- Why does an organization need DNS?
+  
+  Perquè és més fàcil recordar un nom (com google) que no númmeros (8.8.8.8), i sense el nom tothom hauria d'aprendre's la IP de la organització.
+
+- How does DNS work (high-level)?
+
+  Quan s'escriu una URL, es consulta un servido DNS, i llavors es busca en bases de dades o altres servidors la IP associada aquell DNS i la retorna.
+
+- Write 1–2 paragraphs explaining DNS to a non-technical person
+  
+  Si volguessis trucar algú però no sapiguessis el seu número, en lloc de memoritzar el seu número, busques el nom als contactes del mòbil i llavors es marca el seu número associat.
+
+3. **DHCP (Dynamic Host Configuration Protocol)**:
+
+- Research: what is DHCP? What problem does it solve?
+- Why would an organization use DHCP?
+- How does DHCP work (high-level)?
+- Write 1–2 paragraphs explaining DHCP
+
+5. **NTP (Network Time Protocol)**:
    
+- Research: what is NTP? Why does time synchronization matter?
+  
+- Why is synchronized time important for security and operations?
+  
+- Write 1–2 paragraphs explaining NTP
+  
