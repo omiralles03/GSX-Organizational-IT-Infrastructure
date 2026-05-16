@@ -16,7 +16,11 @@ check_minikube() {
     # Si minikube status dona error (no està actiu), l'arranquem
     if ! minikube status &> /dev/null; then
         echo -e "${RED}Minikube està apagat. Arrencant motors automàticament...${NC}"
-        minikube start
+        minikube start --cni=calico
+        if [ $? -ne 0 ]; then
+            echo -e "${RED}Error en arrencar Minikube. Assegura't que tens Minikube instal·lat i configurat correctament.${NC}"
+            exit 1
+        fi
     else
         echo -e "${GREEN}Minikube ja està en funcionament.${NC}"
     fi

@@ -20,8 +20,9 @@ Per verificar la naturalesa efímera i reproduïble de la infraestructura, s'ha 
    ```
    seleccionant l'**Opció 2 (Entorn de Staging)**.
 
-3. **Temps de desplegament:**
-   L'arquitectura completa (Backend amb 3 rèpliques, Nginx Proxy, Grafana, i Prometheus amb Alertmanager) ha trigat exactament **12.66 segons** en aplicar-se completament i passar a estar totalment operativa (`Running`).
+3. **Temps de desplegament (Cold Start):**
+   L'arquitectura completa ha trigat exactament **2 minuts i 16 segons** en passar d'un estat de zero absolut (màquina virtual destruïda) a estar totalment operativa (`Running`).  
+   *Nota tècnica:* Aquest temps inclou el provisionament de la infraestructura base i la injecció del motor de xarxa **Calico CNI** a Minikube. La instal·lació d'aquest controlador avançat és un pas indispensable que hem afegit a l'automatització per tal que el clúster pugui interpretar i fer complir de manera estricta i real les *Network Policies* (tallafocs) dissenyades per a l'entorn.
 
 ## 2. Verificació End-to-End
 
@@ -67,8 +68,10 @@ Durant les fases d'integració i proves d'observabilitat de la Week 13, ens hem 
 1. **Estrangulament de CPU (Throttling) i alertes fallides:**
    * **Problema:** L'script de caos (`trigger_chaos.sh`) no podia saturar el processador prou com per a fer saltar l'alerta de `HighCPUUsage` (configurada al >80%). L'ús es quedava clavat al 20%.
    * **Causa i Solució:** El `limit` de CPU de Kubernetes per al pod estava fixat de forma massa estricta a `200m` (0.2 nuclis). Es va augmentar el límit a `1500m` (1,5 nuclis) dins del fitxer IaC (`main.tf`) i es va ajustar el llindar d'alerta al 60%, permetent que els atacs amb `sha256sum /dev/zero` saturéssin el pod i disparessin correctament els correus d'emergència d'Alertmanager.
+   
 
 ![alerta](../img/alerta.png)
+
 
 
 2. **Error "No Data" als panells de CPU i Memòria a Grafana:**
@@ -78,3 +81,7 @@ Durant les fases d'integració i proves d'observabilitat de la Week 13, ens hem 
 3. **Manca de dades a les mètriques de trànsit web:**
    * **Problema:** Per poder comprovar que les gràfiques d'arquitectura web (com el *Request Rate* o el *Error Rate*) funcionaven correctament, es necessitava una entrada constant d'usuaris que no teníem de forma natural a l'entorn local.
    * **Causa i Solució:** S'ha desenvolupat i executat un script dedicat a la generació de càrrega (`traffic.sh`). Aquest codi realitza un bucle constant de peticions HTTP concurrents cap a l'entrada de l'Nginx, simulant usuaris reals navegant per l'aplicació i nodrint Grafana de dades contínues i realistes per avaluar la salut de l'arquitectura.
+
+4. **Conflicte entre "Zero Trust" (NetworkPolicies) i l'Observabilitat:**
+   * **Problema:** En desplegar l'stack de monitorització sobre la infraestructura blindada de la Week 12, ens vam adonar que els panells de Grafana mostraven "No Data" i no podíem accedir a la interfície web. La política de *Default Deny* i el CNI Calico bloquejaven Prometheus, impedint-li raspar les mètriques dels contenidors, i tallaven la connexió entre Grafana i Prometheus.
+   * **Causa i Solució:** Un clúster completament tancat deixa els "vigilants" a fora. Es van haver de programar noves regles (`kubernetes_network_policy`) a Terraform dedicades exclusivament a l'observabilitat. S'ha creat una excepció per permetre que Prometheus pugui fer *scraping* a tots els pods del namespace, una altra per permetre que Grafana llegeixi del port 9090 de Prometheus, i finalment s'ha permès l'accés d'ingrés extern exclusivament a les interfícies web de monitorització, mantenint la resta del backend aïllat.
