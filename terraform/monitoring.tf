@@ -177,15 +177,28 @@ resource "kubernetes_config_map" "grafana_provisioning" {
             "title": "SYSTEM HEALTH STATUS",
             "type": "stat",
             "gridPos": { "h": 4, "w": 24, "x": 0, "y": 0 },
-            "targets": [{ "expr": "up{job='kubernetes-pods'}" }],
+            "targets": [{ "expr": "scalar(min(up{job='kubernetes-pods'})) * (1 + scalar(max(sum(rate(container_cpu_usage_seconds_total{namespace='default'}[1m])) by (pod) * 100) > bool 60))" }],
             "fieldConfig": {
               "defaults": {
                 "color": { "mode": "thresholds" },
                 "thresholds": {
                   "mode": "absolute",
-                  "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }]
+                  "steps": [
+                    { "color": "red", "value": null },
+                    { "color": "green", "value": 1 },
+                    { "color": "orange", "value": 2 }
+                  ]
                 },
-                "mappings": [{ "type": "value", "options": { "0": { "text": "CRITICAL" }, "1": { "text": "HEALTHY" } } }]
+                "mappings": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": { "text": "DOWN / CRITICAL" },
+                      "1": { "text": "HEALTHY" },
+                      "2": { "text": "SYSTEM SATURATED" }
+                    }
+                  }
+                ]
               }
             }
           },
@@ -222,10 +235,35 @@ resource "kubernetes_config_map" "grafana_provisioning" {
             "fieldConfig": { "defaults": { "unit": "bytes", "min": 0, "custom": { "fillOpacity": 30 } } }
           },
           {
-            "title": "App Uptime (Seconds)",
+            "title": "App Uptime",
             "type": "stat",
             "gridPos": { "h": 7, "w": 8, "x": 16, "y": 11 },
-            "targets": [{ "expr": "app_uptime_seconds" }]
+            "targets": [
+              {
+                "expr": "app_uptime_seconds"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                },
+                "unit": "s"
+              }
+            },
+            "options": {
+              "reduceOptions": {
+                "values": false,
+                "calcs": ["lastNotNull"]
+              },
+              "orientation": "auto",
+              "displayMode": "everySeries",
+              "textMode": "auto",
+              "colorMode": "value",
+              "graphMode": "area",
+              "justifyMode": "auto"
+            }
           }
         ]
       }

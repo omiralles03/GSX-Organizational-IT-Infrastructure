@@ -7,7 +7,7 @@ echo "-----------------------------------------------------------"
 echo "🔥 GSX ALARM TRIGGER (CHAOS SCRIPT)"
 echo "-----------------------------------------------------------"
 echo "Selecciona qué alarma quieres activar:"
-echo "1) HighCPUUsage   (Estresar CPU > 80%)"
+echo "1) HighCPUUsage   (Estresar CPU > 60%)"
 echo "2) HighErrorRate  (Forzar errores > 5%)"
 echo "3) Detener todo"
 read -p "Opción [1-3]: " OPTION
@@ -26,7 +26,6 @@ case $OPTION in
     done
     echo "-----------------------------------------------------------"
     echo "✅ CAOS TOTAL ENVIADO. Mira Grafana ahora."
-    echo "⚠️  Alerta HighCPUUsage: PENDING en 10s -> FIRING en 2 min."
     ;;
 
     2)
