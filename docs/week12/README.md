@@ -3,6 +3,7 @@
 Aquest document detalla el disseny de la arquitectura de la xarxa de GreenDevCorp segons la Setmana 12.
 
 ## 1. Diagrama de l'Arquitectura de la Xarxa
+ 
 ```mermaid
 graph TD
     %% Actors
